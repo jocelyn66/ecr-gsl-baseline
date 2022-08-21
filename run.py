@@ -230,10 +230,10 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
             break
 
         # valid training set
-        hidden_emb = mu.data.detach().cpu().numpy()
-        # mu = mu.data.detach()
-        # mu = torch.sigmoid(torch.mm(mu, mu.T)).cpu()
-        # hidden_emb = mu
+        # hidden_emb = mu.data.detach().cpu().numpy()
+        mu = mu.data.detach()
+        mu = torch.sigmoid(torch.mm(mu, mu.T)).cpu()
+        hidden_emb = mu
 
         model.eval()
 
@@ -322,7 +322,10 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                 logging.info("\t\taverage {} loss: {:.4f}".format(split, test_loss))
                 wandb.log({split+'_loss': test_loss})
 
-                hidden_emb = test_mu.data.detach().cpu().numpy()
+                # hidden_emb = test_mu.data.detach().cpu().numpy()
+                test_mu = test_mu.detach()
+                test_mu = torch.sigmoid(torch.mm(test_mu, test_mu.T)).cpu()
+                hidden_emb = test_mu
 
                 # auc, ap: test event mention pair###########
                 test_metrics1 = test_model(hidden_emb, dataset.event_idx[split], event_true_sub_indices[split], event_false_sub_indices[split])

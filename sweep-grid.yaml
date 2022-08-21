@@ -15,3 +15,5 @@ parameters:
     value: 2
   weight-decay:
     value: 0.01
+  valid_freq:
+    value: 1

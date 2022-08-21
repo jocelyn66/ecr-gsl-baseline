@@ -26,7 +26,7 @@ def format_b3_metrics(metrics):
     return str
 
 
-def test_model(emb, indices, true_indices, false_indices):
+def test_model_np(emb, indices, true_indices, false_indices):
     # 计算: AUC, AP
 
     # 根据共指关系计算AUC等
@@ -62,7 +62,7 @@ def test_model(emb, indices, true_indices, false_indices):
     return auc_score, ap_score
 
 
-def test_model_ts(emb, indices, true_indices, false_indices):
+def test_model(emb, indices, true_indices, false_indices):
     # 计算: AUC, AP
 
     # 根据共指关系计算AUC等
@@ -119,7 +119,7 @@ def eval_model_louvain(path, split, emb, indices=None, threshold=0.5, num=-1, vi
     return list(partition.values()), n_comm, n_edges
 
 
-def eval_model_leiden(path, split, emb, indices=None, threshold=0.5, num=-1, visual=False):
+def eval_model_leiden_np(path, split, emb, indices=None, threshold=0.5, num=-1, visual=False):
     # print('\tleiden')
     emb_ = emb[indices, :]
     event_adj = sigmoid(np.dot(emb_, emb_.T))
@@ -135,7 +135,7 @@ def eval_model_leiden(path, split, emb, indices=None, threshold=0.5, num=-1, vis
     return partition.membership, n_comm, n_edges
     
 
-def eval_model_leiden_ts(path, split, emb, indices=None, threshold=0.5, num=-1, visual=False):
+def eval_model_leiden(path, split, emb, indices=None, threshold=0.5, num=-1, visual=False):
     # print('\tleiden')
     event_adj = emb[indices, :][:, indices]
     # event_adj = sigmoid(np.dot(emb_, emb_.T))
