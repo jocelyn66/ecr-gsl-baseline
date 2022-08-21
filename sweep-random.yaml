@@ -1,0 +1,24 @@
+project: 'ecr-gsl-baseline-test'
+program: run.py
+method: random
+metric:
+  goal: maximize
+  name: Test_event_coref_0.95leiden_b3_f
+parameters:
+  learning-rate:
+    values: [0.00001]
+  rand-node-rate:
+    values: [0,0.1,0.4,0.6,0.8,1.0]
+  hidden2:
+    value: 16
+  max-epochs:
+    value: 100
+  # batch_size:
+  #   max: 8
+  #   min: 2
+  #   distribution: int_uniform  #int
+# early_terminate:
+#   type: hyperband
+#   s: 2
+#   eta: 3
+#   max_iter: 27
