@@ -40,7 +40,7 @@ class GAEOptimizer(object):
         # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
         # https://arxiv.org/abs/1312.6114
         # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-        KLD = -0.5 / self.n_nodes * torch.mean(torch.sum(
+        KLD = -0.5 / self.n_nodes[split] * torch.mean(torch.sum(
             1 + 2 * logvar - mu.pow(2) - logvar.exp().pow(2), 1))
         return cost + KLD
 

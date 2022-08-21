@@ -201,6 +201,8 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
     #     regularizer = getattr(regularizers, args.regularizer)(args.reg)
     optimizer = GAEOptimizer(args, model, optim_method, norm, pos_weight, use_cuda)
 
+    wandb.watch(model, log="all")
+
     # start train######################################
     counter = 0
     best_f1 = None
