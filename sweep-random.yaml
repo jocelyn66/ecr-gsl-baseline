@@ -1,4 +1,4 @@
-project: 'ecr-gsl-baseline-test'
+project: 'ecr-gsl-baseline'
 program: run.py
 method: random
 metric:

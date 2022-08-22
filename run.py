@@ -201,8 +201,6 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
     #     regularizer = getattr(regularizers, args.regularizer)(args.reg)
     optimizer = GAEOptimizer(args, model, optim_method, norm, pos_weight, use_cuda)
 
-    wandb.watch(model, log="all")
-
     # start train######################################
     counter = 0
     best_f1 = None
@@ -222,13 +220,12 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
             if hasattr(torch.cuda, 'empty_cache'):
                 torch.cuda.empty_cache()
 
-        loss, mu = optimizer.epoch(train_dataset, adj_norm['Train'], dataset.adjacency['Train'])
-        losses['Train'].append(loss)
+        train_loss, mu = optimizer.epoch(train_dataset, adj_norm['Train'], dataset.adjacency['Train'])
+        losses['Train'].append(train_loss)
         logging.info("Epoch {} | ".format(epoch))
         logging.info("\tTrain")
-        logging.info("\t\taverage train loss: {:.4f}".format(loss))
-        wandb.log({'Train_loss': loss})
-        if math.isnan(loss):
+        logging.info("\t\taverage train loss: {:.4f}".format(train_loss))
+        if math.isnan(train_loss):
             break
 
         # valid training set
@@ -258,7 +255,7 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                     split+"_entity_coref_ap": metrics2[1],
                     split+"_reconstruct_auc": metrics3[0],
                     split+"_reconstruct_ap": metrics3[1]
-        })
+        }, commit=False)
 
         # B3###################
         # val#####################################
@@ -284,7 +281,7 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_nmi": nmi_metric,
-                })
+                }, commit=False)
 
                 # add_new_item(stats, 'b3_r_'+str(threshold), eval_metrics[0], 'Train')
                 # add_new_item(stats, 'b3_p_'+str(threshold), eval_metrics[1], 'Train')
@@ -315,14 +312,14 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_nmi": nmi_metric,
-                })
+                }, commit=False)
 
             for split in ['Dev', 'Test']:
                 test_loss, test_mu = optimizer.eval(datasets[split], adj_norm[split], dataset.adjacency[split], split)  # norm adj
                 losses[split].append(test_loss)
                 logging.info("\t{}".format(split))
                 logging.info("\t\taverage {} loss: {:.4f}".format(split, test_loss))
-                wandb.log({split+'_loss': test_loss})
+                wandb.log({split+'_loss': test_loss}, commit=False)
 
                 # hidden_emb = test_mu.data.detach().cpu().numpy()
                 test_mu = test_mu.detach()
@@ -347,7 +344,7 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                     split+"_entity_coref_ap": test_metrics2[1],
                     split+"_reconstruct_auc": test_metrics3[0],
                     split+"_reconstruct_ap": test_metrics3[1]
-                })
+                }, commit=False)
 
                 #b3###########################
                 # logging.info("B3 Evaluation in {}:".format(split))
@@ -373,7 +370,7 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_nmi": nmi_metric,
-                    })
+                    },commit=False)
 
                     # pred_list2, n_comm2, n_edges = eval_model_louvain(save_dir, split, hidden_emb, dataset.event_idx[split], threshold, num)
                     # logging.info("\t\tlouvain: n_community = {}".format(n_comm2))
@@ -395,13 +392,14 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_nmi": nmi_metric,
-                    })
+                    }, commit=False)
 
                     # add_new_item(stats, 'ent_b3_r_'+str(threshold), eval_metrics[0], split)
                     # add_new_item(stats, 'ent_b3_p_'+str(threshold), eval_metrics[1], split)
                     # add_new_item(stats, 'ent_b3_f_'+str(threshold), eval_metrics[2], split)
                     # add_new_item(stats,'ent_nmi_'+str(threshold), nmi_metric, split)
 
+        wandb.log({'Train_loss': train_loss},commit=True)
         logging.info("\t\ttime={:.5f}".format(time.time() - t))
         # # 有监督
         # model.eval()

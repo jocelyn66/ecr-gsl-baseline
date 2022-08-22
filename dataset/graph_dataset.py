@@ -69,7 +69,7 @@ class GDataset(object):
         
         for split in ['Train', 'Dev', 'Test']:
             print("check", split)
-            assert np.allclose(self.adjacency[split], self.adjacency[split], atol=1e-8)
+            assert np.allclose(self.adjacency[split], self.adjacency[split].T, atol=1e-8)
             assert np.allclose(self.event_coref_adj[split],self.event_coref_adj[split].T,atol=1e-8)
             assert np.allclose(self.entity_coref_adj[split],self.entity_coref_adj[split].T,atol=1e-8)
         # print("check dataset########")

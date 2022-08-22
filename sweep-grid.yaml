@@ -6,9 +6,9 @@ metric:
   name: Test_event_coref_0.95leiden_b3_f
 parameters:
   learning-rate:
-    values: [0.00001]
+    values: [0.0001]
   rand-node-rate:
-    values: [0,0.2,0.4,0.6]
+    values: [0,0.2,0.4,0.6,0.8,1.0]
   hidden2:
     value: 16
   max-epochs:
