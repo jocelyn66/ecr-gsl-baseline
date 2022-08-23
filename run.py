@@ -61,7 +61,9 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    args.hidden1 = args.hidden2 * 2
+    args.update({'hidden1': args.hidden2 * 2}, allow_val_change=True)
+    if args.cls:
+        args.update({'feat_dim': args.feat_dim * 2}, allow_val_change=True)
 
     if args.rand_search or args.grid_search:
         set_hp(args, hps)
@@ -71,7 +73,7 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
     with open(os.path.join(save_dir, "config.json"), 'a') as fjson:
         json.dump(dict(args), fjson)
 
-    model_name = "model{}_feat-d{}_h1-d{}_h2-d{}.pt".format(num, args.feat_dim, args.hidden1, args.hidden2)
+    model_name = "model_feat-d{}_h1-d{}_h2-d{}.pt".format(args.feat_dim, args.hidden1, args.hidden2)
     logging.info(args)
 
     if args.double_precision:
@@ -201,6 +203,8 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
     #     regularizer = getattr(regularizers, args.regularizer)(args.reg)
     optimizer = GAEOptimizer(args, model, optim_method, norm, pos_weight, use_cuda)
 
+    wandb.watch(model, log="all")
+
     # start train######################################
     counter = 0
     best_f1 = None
@@ -248,7 +252,7 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
         logging.info("\t\treconstruct adj:" + format_metrics(metrics3, 'Train'))
 
         split = 'Train'
-        wandb.log({
+        wandb.log({ 
                     split+"_event_coref_auc": metrics1[0],
                     split+"_event_coref_ap": metrics1[1],
                     split+"_entity_coref_auc": metrics2[0],
@@ -277,6 +281,8 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
 
                 comm_dect = 'leiden'
                 wandb.log({
+                        split+"_event_coref_"+str(threshold)+comm_dect+"_num_community": n_comm,
+                        split+"_event_coref_"+str(threshold)+comm_dect+"_num_edges": n_edges,
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_r": eval_metrics[0],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
@@ -308,13 +314,15 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                 # add_new_item(stats,'ent_nmi_'+str(threshold), nmi_metric, 'Train')
 
                 wandb.log({
+                        split+"_entity_coref_"+str(threshold)+comm_dect+"_num_community": n_comm,
+                        split+"_entity_coref_"+str(threshold)+comm_dect+"_num_edges": n_edges,
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_r": eval_metrics[0],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_nmi": nmi_metric,
                 }, commit=False)
 
-            for split in ['Dev', 'Test']:
+            for split in ['Test']:
                 test_loss, test_mu = optimizer.eval(datasets[split], adj_norm[split], dataset.adjacency[split], split)  # norm adj
                 losses[split].append(test_loss)
                 logging.info("\t{}".format(split))
@@ -366,6 +374,8 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
 
                     comm_dect = 'leiden'
                     wandb.log({
+                        split+"_event_coref_"+str(threshold)+comm_dect+"_num_community": n_comm,
+                        split+"_event_coref_"+str(threshold)+comm_dect+"_num_edges": n_edges,
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_r": eval_metrics[0],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_event_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
@@ -388,6 +398,8 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
                     logging.info("\t\t\tnmi={:.5f}".format(nmi_metric))
 
                     wandb.log({
+                        split+"_entity_coref_"+str(threshold)+comm_dect+"_num_community": n_comm,
+                        split+"_entity_coref_"+str(threshold)+comm_dect+"_num_edges": n_edges,
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_r": eval_metrics[0],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_p": eval_metrics[1],
                         split+"_entity_coref_"+str(threshold)+comm_dect+"_b3_f": eval_metrics[2],
@@ -459,7 +471,9 @@ def train(args, hps=None, set_hp=None, save_dir=None, num=-1, threshold=0.99):
     # logging.info(conll_f1)
 
     model_path = os.path.join(save_dir, model_name)  #最后一个epoch
-    save_check_point(model, model_path)
+    # save_check_point(model, model_path)
+    torch.save(model.state_dict(), model_path)
+    wandb.save('model.h5')
     # torch.save(model.cpu().state_dict(), model_path)
 
     # plot(save_dir, 'converg', num, losses['Train'], losses['Dev'], losses['Test'])
@@ -576,7 +590,7 @@ if __name__ == "__main__":
     start = datetime.datetime.now()
 
     wandb.init(project="ecr-gsl-baseline-test", config=parser)
-    # wandb.watch_called = False  # Re-run the model without restarting the runtime, unnecessary after our next release
+    wandb.watch_called = False  # Re-run the model without restarting the runtime, unnecessary after our next release
     args = wandb.config
 
     if parser.rand_search:

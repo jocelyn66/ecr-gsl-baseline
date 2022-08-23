@@ -8,7 +8,7 @@ parameters:
   learning-rate:
     values: [0.0001]
   rand-node-rate:
-    values: [0,0.2,0.4,0.6,0.8,1.0]
+    values: [0,0.4, 1.0]
   hidden2:
     value: 16
   max-epochs:
@@ -19,3 +19,9 @@ parameters:
     value: 1
   encoder:
     value: 'gvae'
+  win-w:
+    values: [0.1,0.3,0.5]
+  win-len:
+    values: [1,2]
+  cls:
+    values: [True, False]

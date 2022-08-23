@@ -18,6 +18,9 @@ class ECRModel(nn.Module):
         self.doc_schema = schema_list[0]
         self.event_schema = schema_list[1]
         self.entity_schema = schema_list[2]
+        self.win_w = args.win_w
+        self.win_len = args.win_len
+        self.concat_cls = args.cls
 
         self.gsl = getattr(gsls, name2gsl[args.encoder])(args.feat_dim, args.hidden1, args.hidden2, args.dropout)
         self.gsl_name = args.encoder
@@ -78,6 +81,7 @@ class ECRModel(nn.Module):
             # batch_size, seq_len = sent['input_ids'].shape
 
             input_ids = torch.tensor(sent['input_ids'], device=self.device).reshape(1, -1)
+            
             encoder_output = self.bert_encoder(input_ids)
             encoder_hidden_state = torch.mm(torch.tensor(sent['input_mask'], device=self.device).T, encoder_output['last_hidden_state'].squeeze())  # (n_sent, n_tokens, feat_dim)
 
@@ -89,7 +93,10 @@ class ECRModel(nn.Module):
 
                 mention_mask = torch.zeros((1, encoder_hidden_state.shape[0]-2), device=self.device)  #不含[CLS][SEP]的索引
                 mention_mask[:, event['tokens_number']] = 1  #'token_number':起始0 不考虑cls, encoder_hidden_state 需要+1
-                
+
+                if self.win_len>0 and self.win_w>0:
+                    mention_mask = self.expand_win(event['tokens_number'], mention_mask)
+
                 mask_sum = mention_mask.sum(dim=1)
                 mask_ave = (1 / mask_sum).repeat((1, mention_mask.shape[1]))
                 mention_mask = mention_mask * mask_ave
@@ -102,6 +109,9 @@ class ECRModel(nn.Module):
                 mention_mask = torch.zeros((1, encoder_hidden_state.shape[0]-2), device=self.device)  #不含[CLS][SEP]的索引
                 mention_mask[:, entity['tokens_number']] = 1
 
+                if self.win_len>0 and self.win_w>0:
+                    mention_mask = self.expand_win(entity['tokens_number'], mention_mask)
+
                 mask_sum = mention_mask.sum(dim=1)
                 mask_ave = (1 / mask_sum).repeat((1, mention_mask.shape[1]))
                 mention_mask = mention_mask * mask_ave
@@ -111,9 +121,29 @@ class ECRModel(nn.Module):
                 masks.append(this_mask)
                 
             masks = torch.cat(masks, dim=0).cuda()
-            this_feature = torch.mm(masks, encoder_hidden_state)            
+            this_feature = torch.mm(masks, encoder_hidden_state)
+            if self.concat_cls:
+                this_feature = torch.concat((this_feature, encoder_hidden_state[0:1, :].repeat((this_feature.shape[0], 1))), dim=1)            
             features.append(this_feature)
 
         features = torch.cat(features)    # encoder_hidden_state * input_mask = 所求表征
         return self.gsl(features, adj)  # gae
     
+    def expand_win(self, numbers, mask):
+        max_count, count, l, max_l, max_r = 0, 0, numbers[0], numbers[0], numbers[-1]
+        nums = [numbers[0]-1]+numbers+[numbers[-1]+2]
+        for i in range(1, len(nums)-1):
+            
+            if nums[i] - nums[i-1] > 1:  #不连续
+                if count>max_count:
+                    max_count = count
+                    max_l = l
+                    max_r = nums[i-1]
+                l = nums[i]
+                count=1
+            else:
+                count += 1
+        expand = mask.clone()
+        expand[:, max(max_l-self.win_len, 0):max_l] = self.win_w
+        expand[:, max_r+1:min(max_r+1+self.win_len, mask.shape[-1])] = self.win_w
+        return torch.where(mask>0, mask, expand)
