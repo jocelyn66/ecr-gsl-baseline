@@ -436,3 +436,15 @@ wandb/sweep-x3dcf967/config-5gb2d5pe.yaml
 wandb/sweep-x3dcf967/config-ro673epp.yaml
 wandb/sweep-x3dcf967/config-v7tobunv.yaml
 wandb/sweep-z6ttjp8g/config-shooxnez.yaml
+sweep-grid.yaml
+wandb/run-20220823_132347-8x20l72c/run-8x20l72c.wandb
+wandb/run-20220823_132347-8x20l72c/files/conda-environment.yaml
+wandb/run-20220823_132347-8x20l72c/files/config.yaml
+wandb/run-20220823_132347-8x20l72c/files/output.log
+wandb/run-20220823_132347-8x20l72c/files/requirements.txt
+wandb/run-20220823_132347-8x20l72c/files/wandb-metadata.json
+wandb/run-20220823_132347-8x20l72c/files/wandb-summary.json
+wandb/run-20220823_132347-8x20l72c/logs/debug-internal.log
+wandb/run-20220823_132347-8x20l72c/logs/debug.log
+wandb/sweep-r12cs6tx/config-8x20l72c.yaml
+sweep-grid.yaml

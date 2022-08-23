@@ -68,7 +68,7 @@ parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
 parser.add_argument('--plm_name', type=str, default='bert-base-uncased')
 parser.add_argument('--feat_dim', type=int, default=768, 
                     help='size of features, i.e. bert embedding dim')
-parser.add_argument("--cls", type=bool, help='concat [CLS] embedding')
+parser.add_argument("--cls", type=bool, default=False, help='concat [CLS] embedding')
 parser.add_argument("--win-w", type=float, default=0., help='weight applyed to token out of span, w=1 for token in span')
 parser.add_argument("--win-len", type=int, default=0, help='')
 # encoder config#####################
